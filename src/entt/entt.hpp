@@ -66,4 +66,5 @@ namespace entt {}
 #include "signal/dispatcher.hpp"
 #include "signal/emitter.hpp"
 #include "signal/sigh.hpp"
+#include "di/context.hpp"
 // IWYU pragma: end_exports

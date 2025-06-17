@@ -192,6 +192,7 @@ if(ENTT_INCLUDE_HEADERS)
             $<BUILD_INTERFACE:${EnTT_SOURCE_DIR}/src/entt/signal/emitter.hpp>
             $<BUILD_INTERFACE:${EnTT_SOURCE_DIR}/src/entt/signal/fwd.hpp>
             $<BUILD_INTERFACE:${EnTT_SOURCE_DIR}/src/entt/signal/sigh.hpp>
+            $<BUILD_INTERFACE:${EnTT_SOURCE_DIR}/src/entt/di/context.hpp>
             $<BUILD_INTERFACE:${EnTT_SOURCE_DIR}/src/entt/entt.hpp>
             $<BUILD_INTERFACE:${EnTT_SOURCE_DIR}/src/entt/fwd.hpp>
     )

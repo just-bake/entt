@@ -8,4 +8,5 @@
 #include "process/fwd.hpp"
 #include "resource/fwd.hpp"
 #include "signal/fwd.hpp"
+#include "di/fwd.hpp"
 // IWYU pragma: end_exports
