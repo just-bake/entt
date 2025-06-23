@@ -4,6 +4,7 @@
 #include <entt/meta/factory.hpp>
 
 struct clazz {
+    clazz(int test) {}
 };
 
 struct InjectorCtx: ::testing::Test {
@@ -11,10 +12,13 @@ struct InjectorCtx: ::testing::Test {
         using namespace entt::literals;
 
         entt::meta_factory<clazz>{}
-            .type("clazz"_hs);
+            .type("clazz"_hs)
+            .ctor<int>();
     }
 };
 
 TEST_F(InjectorCtx, constructorSize) {
-    ASSERT_TRUE(false);
+    auto type = entt::resolve<clazz>();
+
+    ASSERT_EQ(type.ctor_count(), 1);
 }

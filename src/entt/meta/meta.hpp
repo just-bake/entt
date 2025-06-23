@@ -938,6 +938,28 @@ private:
     return !(lhs == rhs);
 }
 
+/*! @brief Opaque wrapper for constructors. */
+struct meta_ctor {
+    /*! @brief Unsigned integer type. */
+    using size_type = typename internal::meta_func_node::size_type;
+
+    /*! @brief Default constructor. */
+    meta_ctor() noexcept = default;
+
+    /**
+     * @brief Context aware constructor for meta objects.
+     * @param area The context from which to search for meta types.
+     * @param curr The underlying node with which to construct the instance.
+     */
+    meta_ctor(const meta_ctx &area, internal::meta_ctor_node curr) noexcept
+        : node{std::move(curr)},
+          ctx{&area} {}
+
+private:
+    internal::meta_ctor_node node{};
+    const meta_ctx *ctx{&locator<meta_ctx>::value_or()};
+};
+
 /*! @brief Opaque wrapper for member functions. */
 struct meta_func {
     /*! @brief Unsigned integer type. */
@@ -1345,6 +1367,19 @@ public:
     [[nodiscard]] meta_range<meta_func, typename decltype(internal::meta_type_descriptor::func)::const_iterator> func() const noexcept {
         using return_type = meta_range<meta_func, typename decltype(internal::meta_type_descriptor::func)::const_iterator>;
         return node.details ? return_type{{*ctx, node.details->func.cbegin()}, {*ctx, node.details->func.cend()}} : return_type{};
+    }
+
+    [[nodiscard]] size_type ctor_count() const {
+        return node.details ? node.details->ctor.size() : 0u;
+    }
+
+    /**
+     * @brief Lookup utility for meta constructors.
+     * @param index index of the constructor.
+     * @return The registered meta constructor for the given index, if any.
+     */
+    [[nodiscard]] meta_ctor ctor(const size_type index) const {
+        return (node.details && (index < node.details->ctor.size())) ? meta_ctor{*ctx, node.details->ctor[index]} : meta_ctor{};
     }
 
     /**
