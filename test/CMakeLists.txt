@@ -173,6 +173,9 @@ if(ENTT_BUILD_LIB)
 
     SETUP_LIB_SHARED_TEST(view shared)
     SETUP_LIB_PLUGIN_TEST(view plugin)
+
+    SETUP_LIB_SHARED_TEST(di shared)
+    SETUP_LIB_PLUGIN_TEST(di plugin)
 endif()
 
 # Test snapshot
@@ -299,3 +302,7 @@ SETUP_BASIC_TEST(delegate entt/signal/delegate.cpp)
 SETUP_BASIC_TEST(dispatcher entt/signal/dispatcher.cpp)
 SETUP_BASIC_TEST(emitter entt/signal/emitter.cpp)
 SETUP_BASIC_TEST(sigh entt/signal/sigh.cpp)
+
+# Test di
+
+SETUP_BASIC_TEST(injector_ctx entt/di/injector_ctx.cpp)
