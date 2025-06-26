@@ -1,6 +1,8 @@
 #ifndef ENTT_META_NODE_HPP
 #define ENTT_META_NODE_HPP
 
+#include <entt/di/injection_info.hpp>
+
 #include <cstddef>
 #include <memory>
 #include <type_traits>
@@ -85,6 +87,7 @@ struct meta_ctor_node {
     size_type arity{0u};
     meta_type (*arg)(const meta_ctx &, const size_type) noexcept {};
     meta_any (*invoke)(const meta_ctx &, meta_any *const){};
+    di::injection_info injection_info{};
 };
 
 struct meta_dtor_node {
@@ -102,6 +105,7 @@ struct meta_data_node {
     bool (*set)(meta_handle, meta_any){};
     meta_any (*get)(meta_handle){};
     meta_custom_node custom{};
+    di::injection_info injection_info{};
 };
 
 struct meta_func_node {
@@ -115,6 +119,7 @@ struct meta_func_node {
     meta_any (*invoke)(meta_handle, meta_any *const){};
     std::shared_ptr<meta_func_node> next;
     meta_custom_node custom{};
+    di::injection_info injection_info{};
 };
 
 struct meta_template_node {
@@ -149,6 +154,7 @@ struct meta_type_node {
     meta_dtor_node dtor{};
     meta_custom_node custom{};
     std::shared_ptr<meta_type_descriptor> details;
+    di::injection_info injection_info{};
 };
 
 template<auto Member, typename Type, typename Value>

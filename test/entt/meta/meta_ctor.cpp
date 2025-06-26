@@ -212,3 +212,84 @@ TEST_F(MetaCtor, ReRegistration) {
     // implicitly generated default constructor is not cleared
     ASSERT_NE(node.default_constructor, nullptr);
 }
+
+// --------- DI -----------
+TEST_F(MetaCtor, TypeCtor) {
+    using namespace entt::literals;
+
+    // Get the meta type for clazz
+    auto type = entt::resolve("clazz"_hs);
+    ASSERT_TRUE(type);
+
+    // Get the range of constructors
+    auto ctors = type.ctor();
+
+    // Test iteration over constructors
+    bool found_int_char_ctor = false;
+    for(auto curr: ctors) {
+        // Verify ctor properties
+        ASSERT_TRUE(curr.second);
+        if(curr.second.arity() == 2) {
+            // Check if this is our int, char constructor
+            auto first_arg = curr.second.arg(0);
+            auto second_arg = curr.second.arg(1);
+            ASSERT_TRUE(first_arg);
+            ASSERT_TRUE(second_arg);
+            if(first_arg.info().index() == entt::type_id<int>().index()
+               && second_arg.info().index() == entt::type_id<char>().index()) {
+                found_int_char_ctor = true;
+            }
+        }
+    }
+
+    ASSERT_TRUE(found_int_char_ctor);
+}
+
+TEST_F(MetaCtor, CtorArg) {
+    using namespace entt::literals;
+
+    // Get the meta type for clazz
+    auto type = entt::resolve("clazz"_hs);
+    ASSERT_TRUE(type);
+
+    // Get constructor
+    auto ctor = type.ctor(2);
+    ASSERT_TRUE(ctor);
+
+    // Test arg() function
+    ASSERT_TRUE(ctor.arg(0)); // First argument should exist
+    ASSERT_EQ(ctor.arg(0), entt::resolve<const int &>()); // Should be int
+    ASSERT_TRUE(ctor.arg(1)); // Second argument should exist
+    ASSERT_EQ(ctor.arg(1), entt::resolve<char>()); // Should be char
+    ASSERT_FALSE(ctor.arg(2)); // Third argument shouldn't exist
+}
+
+TEST_F(MetaCtor, CtorConstruct) {
+    using namespace entt::literals;
+
+    // Get the meta type and constructor
+    auto type = entt::resolve("clazz"_hs);
+    auto ctor = type.ctor(2);
+    ASSERT_TRUE(ctor);
+
+    // Test construct
+    auto instance = ctor.construct(42, 'c');
+    ASSERT_TRUE(instance);
+    ASSERT_EQ(instance.cast<clazz>().i, 42);
+    ASSERT_EQ(instance.cast<clazz>().c, 'c');
+}
+
+TEST_F(MetaCtor, CtorOperators) {
+    using namespace entt::literals;
+
+    auto type = entt::resolve("clazz"_hs);
+
+    // Test boolean operator
+    auto valid_ctor = type.ctor(2);
+    ASSERT_TRUE(valid_ctor);
+    ASSERT_TRUE(static_cast<bool>(valid_ctor));
+
+    // Test equality operator
+    auto same_ctor = type.ctor(2);
+    ASSERT_TRUE(valid_ctor == same_ctor);
+}

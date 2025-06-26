@@ -955,6 +955,59 @@ struct meta_ctor {
         : node{std::move(curr)},
           ctx{&area} {}
 
+    /**
+     * @brief Returns the number of arguments accepted by a member function.
+     * @return The number of arguments accepted by the member function.
+     */
+    [[nodiscard]] size_type arity() const noexcept {
+        return node.arity;
+    }
+
+    [[nodiscard]] di::injection_info injection() const noexcept {
+        return node.injection_info;
+    }
+
+    /**
+     * @brief Returns the type of the i-th argument of a member function.
+     * @param index Index of the argument of which to return the type.
+     * @return The type of the i-th argument of a member function.
+     */
+    [[nodiscard]] inline meta_type arg(size_type index) const noexcept;
+
+    /**
+     * @brief Constructs a new instance of the type, if possible.
+     * @param args Parameters to use to construct the new object.
+     * @param sz Number of parameters to use to construct the new object.
+     * @return A wrapper containing the returned value, if any.
+     */
+    meta_any construct(meta_any *const args, const size_type sz) const {
+        return ((node.invoke != nullptr) && (sz == arity())) ? node.invoke(*ctx, args) : meta_any{meta_ctx_arg, *ctx};
+    }
+
+    /**
+     * @copybrief construct
+     * @tparam Args Types of arguments to use to construct the new object.
+     * @param args Parameters to use to construct the new object.
+     * @return A wrapper containing the returned value, if any.
+     */
+    template<typename... Args>
+    [[nodiscard]] meta_any construct(Args &&...args) const {
+        return construct(std::array<meta_any, sizeof...(Args)>{meta_any{*ctx, std::forward<Args>(args)}...}.data(), sizeof...(Args));
+    }
+
+    /**
+     * @brief Returns true if an object is valid, false otherwise.
+     * @return True if the object is valid, false otherwise.
+     */
+    [[nodiscard]] explicit operator bool() const noexcept {
+        return (node.invoke != nullptr);
+    }
+
+    /*! @copydoc meta_data::operator== */
+    [[nodiscard]] bool operator==(const meta_ctor &other) const noexcept {
+        return (ctx == other.ctx) && (node.invoke == other.node.invoke);
+    }
+
 private:
     internal::meta_ctor_node node{};
     const meta_ctx *ctx{&locator<meta_ctx>::value_or()};
@@ -1369,8 +1422,13 @@ public:
         return node.details ? return_type{{*ctx, node.details->func.cbegin()}, {*ctx, node.details->func.cend()}} : return_type{};
     }
 
-    [[nodiscard]] size_type ctor_count() const {
-        return node.details ? node.details->ctor.size() : 0u;
+    /**
+     * @brief Returns a range to visit registered top-level functions.
+     * @return An iterable range to visit registered top-level functions.
+     */
+    [[nodiscard]] meta_range<meta_ctor, typename decltype(internal::meta_type_descriptor::ctor)::const_iterator> ctor() const noexcept {
+        using return_type = meta_range<meta_ctor, typename decltype(internal::meta_type_descriptor::ctor)::const_iterator>;
+        return node.details ? return_type{{*ctx, node.details->ctor.cbegin()}, {*ctx, node.details->ctor.cend()}} : return_type{};
     }
 
     /**
@@ -1620,6 +1678,10 @@ inline bool meta_any::assign(meta_any &&other) {
 
 [[nodiscard]] inline meta_type meta_func::ret() const noexcept {
     return (node.ret != nullptr) ? meta_type{*ctx, node.ret(internal::meta_context::from(*ctx))} : meta_type{};
+}
+
+[[nodiscard]] inline meta_type meta_ctor::arg(const size_type index) const noexcept {
+    return index < arity() ? node.arg(*ctx, index) : meta_type{};
 }
 
 [[nodiscard]] inline meta_type meta_func::arg(const size_type index) const noexcept {

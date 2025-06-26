@@ -87,6 +87,16 @@ protected:
         }
     }
 
+    void ctor(meta_ctor_node node) {
+        reset_bucket(parent);
+        auto insertion_point = std::find_if(details->ctor.begin(), details->ctor.end(),
+            [&node](const meta_ctor_node& existing) {
+                return existing.injection_info.ctor_priority() > node.injection_info.ctor_priority();
+            });
+        details->ctor.insert(insertion_point, std::move(node));
+    }
+
+
     void func(meta_func_node node) {
         reset_bucket(node.id, node.invoke);
 
@@ -243,7 +253,30 @@ public:
         using descriptor = meta_function_helper_t<Type, decltype(Candidate)>;
         static_assert(Policy::template value<typename descriptor::return_type>, "Invalid return type for the given policy");
         static_assert(std::is_same_v<std::remove_cv_t<std::remove_reference_t<typename descriptor::return_type>>, Type>, "The function doesn't return an object of the required type");
-        base_type::insert_or_assign(internal::meta_ctor_node{type_id<typename descriptor::args_type>().hash(), descriptor::args_type::size, &meta_arg<typename descriptor::args_type>, &meta_construct<Type, Candidate, Policy>});
+        base_type::ctor(internal::meta_ctor_node{type_id<typename descriptor::args_type>().hash(), descriptor::args_type::size, &meta_arg<typename descriptor::args_type>, &meta_construct<Type, Candidate, Policy>});
+        return *this;
+    }
+
+    /**
+     * @brief Assigns a meta constructor to a meta type.
+     *
+     * Both member functions and free function can be assigned to meta types in
+     * the role of constructors. All that is required is that they return an
+     * instance of the underlying type.<br/>
+     * From a client's point of view, nothing changes if a constructor of a meta
+     * type is a built-in one or not.
+     *
+     * @tparam Candidate The actual function to use as a constructor.
+     * @tparam Policy Optional policy (no policy set by default).
+     * @param priority the priorty of the constructor when constructing the object through injection.
+     * @return A meta factory for the parent type.
+     */
+    template<auto Candidate, typename Policy = as_is_t>
+    meta_factory ctor(const int priority) noexcept {
+        using descriptor = meta_function_helper_t<Type, decltype(Candidate)>;
+        static_assert(Policy::template value<typename descriptor::return_type>, "Invalid return type for the given policy");
+        static_assert(std::is_same_v<std::remove_cv_t<std::remove_reference_t<typename descriptor::return_type>>, Type>, "The function doesn't return an object of the required type");
+        base_type::ctor(internal::meta_ctor_node{type_id<typename descriptor::args_type>().hash(), descriptor::args_type::size, &meta_arg<typename descriptor::args_type>, &meta_construct<Type, Candidate, Policy>, di::injection_info{priority}});
         return *this;
     }
 
@@ -262,7 +295,29 @@ public:
         // default constructor is already implicitly generated, no need for redundancy
         if constexpr(sizeof...(Args) != 0u) {
             using descriptor = meta_function_helper_t<Type, Type (*)(Args...)>;
-            base_type::insert_or_assign(internal::meta_ctor_node{type_id<typename descriptor::args_type>().hash(), descriptor::args_type::size, &meta_arg<typename descriptor::args_type>, &meta_construct<Type, Args...>});
+            base_type::ctor(internal::meta_ctor_node{type_id<typename descriptor::args_type>().hash(), descriptor::args_type::size, &meta_arg<typename descriptor::args_type>, &meta_construct<Type, Args...>});
+        }
+
+        return *this;
+    }
+
+    /**
+     * @brief Assigns a meta constructor to a meta type.
+     *
+     * A meta constructor is uniquely identified by the types of its arguments
+     * and is such that there exists an actual constructor of the underlying
+     * type that can be invoked with parameters whose types are those given.
+     *
+     * @tparam Args Types of arguments to use to construct an instance.
+     * @tparam priority the priorty of the constructor when constructing the object through injection.
+     * @return A meta factory for the parent type.
+     */
+    template<typename... Args>
+    meta_factory ctor(const int priority) noexcept {
+        // default constructor is already implicitly generated, no need for redundancy
+        if constexpr(sizeof...(Args) != 0u) {
+            using descriptor = meta_function_helper_t<Type, Type (*)(Args...)>;
+            base_type::ctor(internal::meta_ctor_node{type_id<typename descriptor::args_type>().hash(), descriptor::args_type::size, &meta_arg<typename descriptor::args_type>, &meta_construct<Type, Args...>, di::injection_info{priority}});
         }
 
         return *this;
